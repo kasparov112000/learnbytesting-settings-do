@@ -1,0 +1,22 @@
+resources:
+  repositories:
+  - repository: pipeline
+    type: git
+    name: easydevops
+    ref: refs/heads/master
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - release-*
+    - refs/tags/dev-release*
+  paths:
+    exclude:
+    - azure-pipelines.yml
+
+pr: none
+
+jobs:
+- template: job-template-main.yml@pipeline

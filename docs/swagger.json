@@ -1,0 +1,238 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Microservice for settings",
+    "version": "1.0.0",
+    "title": "settings",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "tags": [
+      {
+        "name": "healthcheck"
+      }     
+    ],
+    "externalDocs": {
+      "description": "Find out more",
+      "url": "http://swagger.io"
+    }
+  },
+  "paths": {
+    "/healthcheck": {
+      "get": {
+        "tags": [
+          "healthcheck"
+        ],
+        "summary": "Check the health of the application",
+        "description": "",
+        "operationId": "healthcheck",
+        "produces": [
+          "application/xml",
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "items": {
+                "$ref": "#/definitions/Healthcheck"
+              }
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/setting": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Fetches all resources",
+        "description": "",
+        "operationId": "getsetting",
+        "produces": [
+          "application/xml",
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/setting"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Adds a new resource.",
+        "description": "",
+        "operationId": "createsetting",
+        "produces": [
+          "application/xml",
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Create setting object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/setting"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/setting/{id}": {
+      "get": {
+        "tags": [
+          "settings/{id}"
+        ],
+        "summary": "Fetch resource by Id.",
+        "description": "",
+        "operationId": "getsetting/{id}",
+        "produces": [
+          "application/xml",
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The id that needs to be fetched. ",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/setting"
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "settings/{id}"
+        ],
+        "summary": "Updates an existing resource.",
+        "description": "",
+        "operationId": "updatesetting",
+        "produces": [
+          "application/xml",
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id that need to be updated",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Updated setting object",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/setting"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully updated data"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "settings/{id}"
+        ],
+        "summary": "Deletes resource by Id.",
+        "description": "",
+        "operationId": "deletesetting",
+        "produces": [
+          "application/xml",
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id that need to be deleted",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully deleted data"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Healthcheck": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      },
+      "xml": {
+        "name": "Healthcheck"
+      }
+    },
+    "document": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "createdDate": {
+          "type": "string"
+        },
+        "modifiedDate": {
+          "type": "string"
+        }
+      },
+      "xml": {
+        "name": "setting"
+      }
+    }
+  }
+}
