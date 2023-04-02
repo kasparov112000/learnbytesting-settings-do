@@ -1,8 +1,9 @@
-import { DbMicroServiceBase, UnauthorizedException } from 'hipolito-framework';
+// import { DbMicroServiceBase, UnauthorizedException } from 'hipolito-framework';
 import { Setting, RoleType, MdrApplicationUser } from 'hipolito-models';
 
 import * as rp from 'request-promise';
 import { serviceConfigs } from '../../config/global.config';
+import { DbMicroServiceBase } from './db-micro-service-base';
 
 export class SettingService extends DbMicroServiceBase { // eslint-disable-line
   constructor(dbService) {

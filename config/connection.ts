@@ -6,7 +6,7 @@ let database = process.env.MONGO_NAME || 'mdr-settings';
 
 const host = process.env.MONGO_HOST || '127.0.0.1';
 const mongoport = process.env.MONGO_PORT || 27017;
-const password = process.env.MONGO_PASSWORD || '';
+const password = process.env.MONGO_PASSWORD || '';  
 const username = process.env.MONGO_USER || '';
 const ssl = process.env.MONGO_SSL || false;
 const credentials = username ? `${username}:${encodeURIComponent(password)}@` : '';

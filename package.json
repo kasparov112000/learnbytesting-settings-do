@@ -8,7 +8,7 @@
     "main": "./app/server.ts",
     "scripts": {
         "build": "tsc --module commonjs",
-        "start": "node ./app/server.js",
+        "start": "ts-node ./app/server.ts",
         "start:build": "npm run build && node ./build/index.js",
         "start:dev": "npm-run-all --parallel lint:watch start:watch",
         "start:watch": "ts-node-dev --respawn --transpileOnly ./app/server.ts",
@@ -56,7 +56,7 @@
         "hipolito-models": "^1.0.13",
         "http": "0.0.0",
         "lodash": "^4.17.15",
-        "mongoose": "^5.11.18",
+        "mongoose": "^5.9.4",
         "mongoose-query-parser": "^1.1.5",
         "morgan": "^1.9.0",
         "request": "^2.88.2",

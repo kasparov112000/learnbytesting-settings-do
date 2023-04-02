@@ -39,7 +39,7 @@ app.use(mongoSanitize({
     replaceWith: '_'
 }));
 
-app.use(morgan(function (tokens, req, res) {
+app.use(morgan(function (tokens, req:any, res) {
   return [
     req.hostname,
     tokens.method(req, res),
