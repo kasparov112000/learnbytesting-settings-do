@@ -14,9 +14,12 @@ import { SettingService } from './services/setting.service';
 import config from '../config/config';
 import * as helmet from 'helmet';
 import * as mongoSanitize from 'express-mongo-sanitize';
+import { LoggerWrapper } from './wrapper/loggerWrapper';
+
+const logger = new LoggerWrapper(`${serviceConfigs.appName}[v${serviceConfigs.appVersion}]`);
 
 const app = express();
-const dbService = new DbService();
+const dbService = new DbService(logger);
 let service;
 
 // Get environment vars
@@ -78,7 +81,7 @@ function databaseConnect() {
 
 function bindServices() {
   try {
-    service = new SettingService(dbService);
+    service = new SettingService(dbService, logger);
   } catch (err) {
     console.log(`Error occurred binding services : ${err}`);
   }

@@ -1,11 +1,20 @@
+import { MicroserviceConnection } from "../app/models/contracts/microservice";
+
+
+const { version: appVersion, name: appName } = require('../package.json');
+
 const ENV_NAME = process.env.ENV_NAME || 'LOCAL';
 const msport = (process.env.ENV_NAME || 'LOCAL') !== 'LOCAL' ? 3000 : 3007;
 
 const serviceConfigs = {
   port: msport,
   envName: ENV_NAME,
-  createPingEndpoint: 'http://orchestrator.dev.create.pwcinternal.com/ping'
+  createPingEndpoint: 'http://orchestrator.dev.create.pwcinternal.com/ping',
+  appName: appName,
+  appVersion: process.env.CHARTS_RELEASE_VERSION || appVersion // charts release or package.json version
 };
+
+const USE_LOCAL_LOGGER = process.env.USE_LOCAL_LOGGER || false;
 
 // App Dynamics
 const debug = process.env.APPD_DEBUG || true;
@@ -42,4 +51,8 @@ const appDynamicsConfigs = {
 };
 // /App Dynamics
 
-export { serviceConfigs, appDynamicsConfigs };
+const microservices = {
+  logger: new MicroserviceConnection('http://auditLogs', 3009, 'auditlogs'),
+}
+
+export { serviceConfigs, appDynamicsConfigs, microservices, USE_LOCAL_LOGGER};
