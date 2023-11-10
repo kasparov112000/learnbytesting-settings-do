@@ -46,6 +46,9 @@ spec:
               value: "ramos111"
             - name: MONGO_USER
               value: "dbAdmin"
+            - name: USE_LOCAL_LOGGER
+              value: "true"
+
           ports:
             - name: http
               containerPort: 3000

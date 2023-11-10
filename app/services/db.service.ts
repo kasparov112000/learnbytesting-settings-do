@@ -12,5 +12,9 @@ export class DbService extends DbServiceBase {
     super(connection, mongoose);
     this._logger = logger;
   }
+
+  get() {
+    console.log('DbService.get()');
+  }
 }
   
