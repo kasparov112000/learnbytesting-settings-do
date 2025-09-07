@@ -105,7 +105,7 @@
     "nyc": "^15.0.0",
     "sinon": "^6.1.5",
     "sinon-mongoose": "^2.2.1",
-    "ts-node-dev": "^1.0.0-pre.44",
+    "ts-node-dev": "^1.1.8",
     "tsconfig-paths": "^3.9.0",
     "tslint": "^5.20.1"
   }
