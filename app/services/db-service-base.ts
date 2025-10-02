@@ -82,8 +82,45 @@ export abstract class DbServiceBase {
             throw new Error('No payload was provided to create.');
         }
 
+        console.log('[DbServiceBase] Create operation:', {
+            model: model,
+            modelName: this.connection.modelName,
+            dbUrl: this.connection.dbUrl
+        });
+        
         this.debugInfo('Create', model);
-        return await this.dbModel.create(model);
+        
+        try {
+            const result = await this.dbModel.create(model);
+            console.log('[DbServiceBase] Create success:', {
+                result: result,
+                id: result._id
+            });
+            return result;
+        } catch (error) {
+            console.error('[DbServiceBase] Create error:', {
+                error: error,
+                message: error.message,
+                code: error.code,
+                name: error.name,
+                model: model,
+                isDuplicateKey: error.code === 11000,
+                keyPattern: error.keyPattern,
+                keyValue: error.keyValue
+            });
+            
+            // If it's a duplicate key error, log which field caused it
+            if (error.code === 11000) {
+                console.error('[DbServiceBase] DUPLICATE KEY ERROR - Cannot create setting because a setting with this name already exists');
+                console.error('[DbServiceBase] Duplicate key details:', {
+                    duplicateField: Object.keys(error.keyPattern || {})[0],
+                    duplicateValue: error.keyValue,
+                    attemptedName: model.name
+                });
+            }
+            
+            throw error;
+        }
     }
 
     public async update<TResult = any>(updateRequest): Promise<TResult> {
@@ -93,25 +130,38 @@ export abstract class DbServiceBase {
 
 
     const o_id = new ObjectId(updateRequest.params.id);
-    const newValues = updateRequest.body;
+    const newValues = { ...updateRequest.body };
     delete newValues._id;
+    
+    console.log('Update operation details:');
+    console.log('ID:', updateRequest.params.id);
+    console.log('Object ID:', o_id);
+    console.log('Update values:', newValues);
+    
     const updateDocument = {
-        $set: { ...newValues },
-      };
-    const found = await this.dbModel.find({ _id: o_id }).lean();
+        $set: newValues
+    };
+    
+    console.log('Update document:', updateDocument);
+    
+    // First, let's check if the document exists
+    const found = await this.dbModel.findById(o_id);
+    console.log('Found document before update:', found);
 
-    const result = await this.dbModel.updateOne({ 
-            _id: o_id
-        }, 
+    // Use findOneAndUpdate to get the updated document back
+    const result = await this.dbModel.findOneAndUpdate(
+        { _id: o_id },
         updateDocument,
-        { new: true }
-        );
+        { new: true, returnDocument: 'after' }
+    );
+    
+    console.log('Update result:', result);
 
-        if (this.connection.loggerEnabled) {
-            console.log('update result', result);
-            console.log('updateRequest from update method', updateRequest);
-            console.log('updateRequest body', updateRequest.body);
-        }
+    if (this.connection.loggerEnabled) {
+        console.log('update result', result);
+        console.log('updateRequest from update method', updateRequest);
+        console.log('updateRequest body', updateRequest.body);
+    }
 
         if (!result) {
             throw new Error(`There was no data found based on the id "${updateRequest.params.id}" to update.`);

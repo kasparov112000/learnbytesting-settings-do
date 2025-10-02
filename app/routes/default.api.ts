@@ -15,6 +15,31 @@ export default function (app, express, serviceobject) {
   });
 
   router.post('/settings', (req, res) => {
+    console.log('[Settings Microservice] POST /settings received:', {
+      body: req.body,
+      headers: req.headers,
+      query: req.query,
+      params: req.params,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      path: req.path,
+      baseUrl: req.baseUrl,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Log to file for audit
+    if (serviceobject.fileLogger) {
+      serviceobject.fileLogger.info('SettingsMicroservice', 'POST /settings received', {
+        body: req.body,
+        headers: {
+          'content-type': req.headers['content-type'],
+          'content-length': req.headers['content-length'],
+          'x-request-id': req.headers['x-request-id']
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     serviceobject.post(req, res);
   });
 
