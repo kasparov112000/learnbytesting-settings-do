@@ -45,7 +45,7 @@ jobs:
             GIT_AUTH_TOKEN=${{ secrets.MYTOKEN }}
 
     - name: Save DigitalOcean kubeconfig with short-lived credentials
-      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 3b23a2dd-3391-4d1a-a478-e2a5564de99c
+      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 k8s-lbt
     
     - name: Prep helm chart
       run: |
