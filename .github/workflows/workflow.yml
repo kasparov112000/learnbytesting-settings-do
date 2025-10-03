@@ -44,29 +44,24 @@ jobs:
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.MYTOKEN }}
 
-    # Deployment steps commented out due to missing cluster access
-    # The settings repository doesn't have the proper DIGITALOCEAN_ACCESS_TOKEN
-    # configured to access the k8s-lbt cluster. 
-    # For now, the image will be built and pushed, but deployment must be done manually.
+    - name: Save DigitalOcean kubeconfig with short-lived credentials
+      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 3b23a2dd-3391-4d1a-a478-e2a5564de99c
     
-    # - name: Save DigitalOcean kubeconfig with short-lived credentials
-    #   run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 k8s-lbt
+    - name: Prep helm chart
+      run: |
+          mv ./helm/Chart.yaml ./helm/Chart.old.yaml &&
+          cat ./helm/Chart.old.yaml | grep -v appVersion > ./helm/Chart.yaml &&
+          echo -e "\r\nappVersion: v${GITHUB_REF##*/}\r\n" >> ./helm/Chart.yaml &&
+          cat ./helm/Chart.yaml
     
-    # - name: Prep helm chart
-    #   run: |
-    #       mv ./helm/Chart.yaml ./helm/Chart.old.yaml &&
-    #       cat ./helm/Chart.old.yaml | grep -v appVersion > ./helm/Chart.yaml &&
-    #       echo -e "\r\nappVersion: v${GITHUB_REF##*/}\r\n" >> ./helm/Chart.yaml &&
-    #       cat ./helm/Chart.yaml
+    - name: Install Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: 'latest'
     
-    # - name: Install Helm
-    #   uses: azure/setup-helm@v3
-    #   with:
-    #     version: 'latest'
-    
-    # - name: Deploy
-    #   run: |
-    #     helm upgrade settings ./helm/ --install --wait --atomic \
-    #       --set=image.tag=${{ github.sha }} \
-    #       --values=./helm/values.yaml \
-    #       --timeout=10m
+    - name: Deploy
+      run: |
+        helm upgrade settings ./helm/ --install --wait --atomic \
+          --set=image.tag=${{ github.sha }} \
+          --values=./helm/values.yaml \
+          --timeout=10m
