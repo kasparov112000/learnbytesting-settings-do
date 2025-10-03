@@ -38,15 +38,14 @@ jobs:
       uses: docker/build-push-action@v2
       with:
           push: true
-          tags: kasparov112000/learnbytesting-settings-docker:latest
+          tags: |
+            kasparov112000/learnbytesting-settings-docker:latest
+            kasparov112000/learnbytesting-settings-docker:${{ github.sha }}
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.MYTOKEN }}
 
     - name: Save DigitalOcean kubeconfig with short-lived credentials
-      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 k8s-1-20-2-do-0-nyc1-1615569741284
- 
-    - name: Save DigitalOcean kubeconfig with short-lived credentials
-      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 k8s-1-20-2-do-0-nyc1-1615569741284
+      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 3b23a2dd-3391-4d1a-a478-e2a5564de99c
     
     - name: Prep helm chart
       run: |
@@ -54,8 +53,14 @@ jobs:
           cat ./helm/Chart.old.yaml | grep -v appVersion > ./helm/Chart.yaml &&
           echo -e "\r\nappVersion: v${GITHUB_REF##*/}\r\n" >> ./helm/Chart.yaml &&
           cat ./helm/Chart.yaml
-    - name: Deploy
-      uses: WyriHaximus/github-action-helm3@v2
+    - name: Install Helm
+      uses: azure/setup-helm@v3
       with:
-          exec: helm upgrade settings ./helm/ --install --wait --atomic  --set=app.name=settings --values=./helm/values.yaml
-          kubeconfig: '${{ secrets.KUBECONFIG }}'
+        version: 'latest'
+    
+    - name: Deploy
+      run: |
+        helm upgrade settings ./helm/ --install --wait --atomic \
+          --set=image.tag=${{ github.sha }} \
+          --values=./helm/values.yaml \
+          --timeout=10m
