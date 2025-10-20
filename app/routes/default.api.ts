@@ -10,6 +10,10 @@ export default function (app, express, serviceobject) {
     serviceobject.checkCreate(req, res);
   });
 
+  router.get('/settings/name/:name', (req, res) => {
+    serviceobject.getByName(req, res);
+  });
+
   router.get('/settings/:id', (req, res) => {
     serviceobject.getById(req, res);
   });

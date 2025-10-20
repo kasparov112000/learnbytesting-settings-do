@@ -141,6 +141,54 @@ export class SettingService extends DbMicroServiceBase { // eslint-disable-line
     }
   }
 
+  public async getByName(req: any, res: any): Promise<any> {
+    try {
+      const settingName = req.params.name;
+      this._logger.info('settings getByName', {
+        text: 'GET by name request received',
+        name: settingName
+      }, null);
+
+      // Query the database for a setting with this name
+      const query = { name: settingName };
+      const settings = await this.dbService.dbModel.findOne(query);
+
+      if (!settings) {
+        this._logger.info('settings getByName', {
+          text: 'Setting not found',
+          name: settingName,
+          level: 'warning'
+        }, null);
+        return res.status(404).json({
+          statusCode: 404,
+          version: '1.0.0.0',
+          message: `Setting '${settingName}' not found`,
+          result: null
+        });
+      }
+
+      this._logger.info('settings getByName', {
+        text: 'Setting found',
+        name: settingName,
+        value: settings.value
+      }, null);
+
+      return res.status(200).json({
+        statusCode: 200,
+        version: '1.0.0.0',
+        message: 'Request successful',
+        result: settings
+      });
+    } catch (error) {
+      this._logger.error('settings getByName', {
+        text: 'Get by name failed',
+        error: JSON.stringify(error),
+        message: error.message
+      }, null);
+      return this.handleErrorResponse(error, res);
+    }
+  }
+
   public async checkCreate(req, res) {
     let shouldWriteAuditLog = false;
     let settings: Setting;
