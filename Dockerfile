@@ -44,7 +44,7 @@ WORKDIR /var/app
 
 COPY --from=builder /var/app/package.json .
 # COPY --from=builder /var/app/.npmrc .
-COPY --from=builder /var/app/build .
+COPY --from=builder /var/app/build ./build
 COPY --from=builder /var/app/docs ./docs/
 
 # RUN chown -R pwcapp:pwcapp /var/app
