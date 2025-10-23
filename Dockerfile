@@ -43,6 +43,7 @@ ENV ENV_NAME=${ENV_NAME}
 WORKDIR /var/app
 
 COPY --from=builder /var/app/package.json .
+COPY --from=builder /var/app/package.json ./build/
 # COPY --from=builder /var/app/.npmrc .
 COPY --from=builder /var/app/build ./build
 COPY --from=builder /var/app/docs ./docs/
