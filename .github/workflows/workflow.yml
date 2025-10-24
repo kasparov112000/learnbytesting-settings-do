@@ -1,4 +1,4 @@
-on: 
+on:
   push:
     branches:
       - main
@@ -6,7 +6,11 @@ on:
     #   - 'config/**'
     #   - 'site/**'
     #   - 'Dockerfile'
-    #   - '.github/workflows/**'   
+    #   - '.github/workflows/**'
+
+concurrency:
+  group: settings-deployment
+  cancel-in-progress: false
 
 jobs:
 
