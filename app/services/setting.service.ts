@@ -6,12 +6,352 @@ import { serviceConfigs } from '../../config/global.config';
 import { DbMicroServiceBase } from './db-micro-service-base';
 import { LoggerWrapper } from 'wrapper/loggerWrapper';
 
+// Environment type for settings targeting
+type SettingEnvironment = 'prod' | 'local' | 'both';
+
+// Interfaces for aggregate pipeline responses
+interface SettingStats {
+  totalCount: number;
+  adminOnlyCount: number;
+  regularCount: number;
+  byCategory: { _id: string; count: number }[];
+  byType: { _id: string; count: number }[];
+  byEnvironment?: { _id: string; count: number }[];
+}
+
+interface PaginatedSettings {
+  settings: Setting[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export class SettingService extends DbMicroServiceBase { // eslint-disable-line
 
   private _logger: LoggerWrapper;
+  public fileLogger: LoggerWrapper; // Expose for route logging
+
   constructor(dbService, logger: LoggerWrapper) {
     super(dbService);
     this._logger = logger;
+    this.fileLogger = logger;
+  }
+
+  // ==========================================
+  // Aggregate Pipeline Methods
+  // ==========================================
+
+  /**
+   * Get settings using aggregate pipeline with filtering and pagination
+   */
+  public async getSettingsAggregate(
+    options: {
+      adminOnly?: boolean;
+      isAdmin?: boolean;
+      category?: string;
+      type?: string;
+      search?: string;
+      page?: number;
+      pageSize?: number;
+      sortField?: string;
+      sortOrder?: 'asc' | 'desc';
+      environment?: SettingEnvironment;
+      currentEnv?: 'prod' | 'local'; // The current running environment
+    } = {}
+  ): Promise<PaginatedSettings> {
+    const {
+      adminOnly,
+      isAdmin = false,
+      category,
+      type,
+      search,
+      page = 1,
+      pageSize = 50,
+      sortField = 'name',
+      sortOrder = 'asc',
+      environment,
+      currentEnv
+    } = options;
+
+    const pipeline: any[] = [];
+
+    // Stage 1: Match - filter by access control
+    const matchStage: any = {};
+
+    // If not admin, exclude adminOnly settings
+    if (!isAdmin) {
+      matchStage.adminOnly = { $ne: true };
+    } else if (adminOnly !== undefined) {
+      // Admin can filter by adminOnly flag
+      matchStage.adminOnly = adminOnly;
+    }
+
+    // Environment filtering
+    if (isAdmin && environment) {
+      // Admin can filter by specific environment
+      matchStage.environment = environment;
+    } else if (!isAdmin && currentEnv) {
+      // Non-admin users only see settings for their current environment or 'both'
+      matchStage.$or = [
+        { environment: currentEnv },
+        { environment: 'both' },
+        { environment: { $exists: false } } // Legacy settings without environment field
+      ];
+    }
+
+    // Filter by category
+    if (category) {
+      matchStage.category = category;
+    }
+
+    // Filter by type (Site/User)
+    if (type) {
+      matchStage.type = type;
+    }
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    // Stage 2: Search - text search on name and description
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { category: { $regex: search, $options: 'i' } }
+          ]
+        }
+      });
+    }
+
+    // Stage 3: Add computed fields
+    pipeline.push({
+      $addFields: {
+        valueType: { $type: '$value' },
+        hasDescription: { $cond: [{ $ifNull: ['$description', false] }, true, false] }
+      }
+    });
+
+    // Use facet for pagination and count
+    const sortDirection = sortOrder === 'desc' ? -1 : 1;
+
+    pipeline.push({
+      $facet: {
+        settings: [
+          { $sort: { [sortField]: sortDirection } },
+          { $skip: (page - 1) * pageSize },
+          { $limit: pageSize }
+        ],
+        totalCount: [
+          { $count: 'count' }
+        ]
+      }
+    });
+
+    // Execute pipeline
+    const result = await this.dbService.dbModel.aggregate(pipeline).allowDiskUse(true);
+
+    let settings = result[0]?.settings || [];
+    const total = result[0]?.totalCount[0]?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Strip admin-only fields from non-admin responses
+    if (!isAdmin) {
+      settings = settings.map(setting => {
+        const { environment, ...rest } = setting;
+        return rest;
+      });
+    }
+
+    this._logger.info('getSettingsAggregate', {
+      text: 'Aggregate pipeline executed',
+      options,
+      resultCount: settings.length,
+      total
+    }, null);
+
+    return {
+      settings,
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
+  }
+
+  /**
+   * Get settings statistics using aggregate pipeline
+   */
+  public async getSettingsStats(isAdmin: boolean = false): Promise<SettingStats> {
+    const matchStage: any = {};
+
+    // If not admin, exclude adminOnly settings from stats
+    if (!isAdmin) {
+      matchStage.adminOnly = { $ne: true };
+    }
+
+    const pipeline: any[] = [];
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    // Build facet with optional byEnvironment for admins
+    const facetStages: any = {
+      totalCount: [{ $count: 'count' }],
+      adminOnlyCount: [
+        { $match: { adminOnly: true } },
+        { $count: 'count' }
+      ],
+      regularCount: [
+        { $match: { $or: [{ adminOnly: false }, { adminOnly: { $exists: false } }] } },
+        { $count: 'count' }
+      ],
+      byCategory: [
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ],
+      byType: [
+        { $group: { _id: '$type', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]
+    };
+
+    // Only include environment stats for admins
+    if (isAdmin) {
+      facetStages.byEnvironment = [
+        { $group: { _id: '$environment', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ];
+    }
+
+    pipeline.push({ $facet: facetStages });
+
+    const result = await this.dbService.dbModel.aggregate(pipeline);
+
+    const stats: SettingStats = {
+      totalCount: result[0]?.totalCount[0]?.count || 0,
+      adminOnlyCount: result[0]?.adminOnlyCount[0]?.count || 0,
+      regularCount: result[0]?.regularCount[0]?.count || 0,
+      byCategory: result[0]?.byCategory || [],
+      byType: result[0]?.byType || []
+    };
+
+    // Only include environment stats for admins
+    if (isAdmin) {
+      stats.byEnvironment = result[0]?.byEnvironment || [];
+    }
+
+    return stats;
+  }
+
+  /**
+   * Bulk update adminOnly flag for multiple settings
+   */
+  public async bulkUpdateAdminOnly(
+    settingIds: string[],
+    adminOnly: boolean
+  ): Promise<{ modifiedCount: number }> {
+    const { ObjectId } = require('mongodb');
+
+    const result = await this.dbService.dbModel.updateMany(
+      { _id: { $in: settingIds.map(id => new ObjectId(id)) } },
+      {
+        $set: {
+          adminOnly,
+          updatedAt: new Date(),
+          updatedBy: 'SYSTEM'
+        }
+      }
+    );
+
+    this._logger.info('bulkUpdateAdminOnly', {
+      text: 'Bulk update completed',
+      settingIds,
+      adminOnly,
+      modifiedCount: result.modifiedCount
+    }, null);
+
+    return { modifiedCount: result.modifiedCount };
+  }
+
+  /**
+   * Bulk update environment field for multiple settings (admin only)
+   */
+  public async bulkUpdateEnvironment(
+    settingIds: string[],
+    environment: SettingEnvironment
+  ): Promise<{ modifiedCount: number }> {
+    const { ObjectId } = require('mongodb');
+
+    const result = await this.dbService.dbModel.updateMany(
+      { _id: { $in: settingIds.map(id => new ObjectId(id)) } },
+      {
+        $set: {
+          environment,
+          updatedAt: new Date(),
+          updatedBy: 'SYSTEM'
+        }
+      }
+    );
+
+    this._logger.info('bulkUpdateEnvironment', {
+      text: 'Bulk environment update completed',
+      settingIds,
+      environment,
+      modifiedCount: result.modifiedCount
+    }, null);
+
+    return { modifiedCount: result.modifiedCount };
+  }
+
+  /**
+   * Get all settings for regular users (excludes adminOnly)
+   * Strips environment field from results
+   */
+  public async getPublicSettings(currentEnv?: 'prod' | 'local'): Promise<Setting[]> {
+    const matchStage: any = {
+      $or: [{ adminOnly: false }, { adminOnly: { $exists: false } }]
+    };
+
+    // Filter by current environment if provided
+    if (currentEnv) {
+      matchStage.$and = [
+        { $or: [{ adminOnly: false }, { adminOnly: { $exists: false } }] },
+        {
+          $or: [
+            { environment: currentEnv },
+            { environment: 'both' },
+            { environment: { $exists: false } }
+          ]
+        }
+      ];
+      delete matchStage.$or;
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      { $sort: { category: 1, name: 1 } },
+      // Remove environment field from results for non-admins
+      { $project: { environment: 0 } }
+    ];
+
+    return await this.dbService.dbModel.aggregate(pipeline);
+  }
+
+  /**
+   * Get admin-only settings
+   */
+  public async getAdminSettings(): Promise<Setting[]> {
+    const pipeline = [
+      { $match: { adminOnly: true } },
+      { $sort: { category: 1, name: 1 } }
+    ];
+
+    return await this.dbService.dbModel.aggregate(pipeline);
   }
 
   protected onPrePost(model: any): void {
