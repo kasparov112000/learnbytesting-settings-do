@@ -25,7 +25,8 @@
     "deploy": "node_modules/babel-cli/bin/babel.js src/ -d build/",
     "lint": "esw src --color",
     "lint:watch": "esw src --color --watch",
-    "dev": "ts-node-dev --respawn --transpile-only ./app/server.ts"
+    "dev": "ts-node-dev --respawn --transpile-only ./app/server.ts",
+    "seed:chess-ai-analysis": "ts-node ./scripts/seed-chess-ai-analysis.ts"
   },
   "jest": {
     "coverageReporters": [
