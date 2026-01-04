@@ -26,7 +26,8 @@
     "lint": "esw src --color",
     "lint:watch": "esw src --color --watch",
     "dev": "ts-node-dev --respawn --transpile-only ./app/server.ts",
-    "seed:chess-ai-analysis": "ts-node ./scripts/seed-chess-ai-analysis.ts"
+    "seed:chess-ai-analysis": "ts-node ./scripts/seed-chess-ai-analysis.ts",
+    "seed:sidebar-menu-category": "ts-node ./scripts/seed-sidebar-menu-category.ts"
   },
   "jest": {
     "coverageReporters": [
