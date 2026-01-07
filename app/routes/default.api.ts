@@ -23,6 +23,9 @@ export default function (app, express, serviceobject) {
    */
   router.get('/settings/aggregate', async (req, res) => {
     try {
+      console.log('[Settings Microservice] /settings/aggregate called');
+      console.log('[Settings Microservice] Query params:', req.query);
+
       const options = {
         isAdmin: req.query.isAdmin === 'true',
         adminOnly: req.query.adminOnly !== undefined ? req.query.adminOnly === 'true' : undefined,
@@ -37,7 +40,12 @@ export default function (app, express, serviceobject) {
         currentEnv: req.query.currentEnv as 'prod' | 'local'
       };
 
+      console.log('[Settings Microservice] Aggregate options:', options);
+
       const result = await serviceobject.getSettingsAggregate(options);
+
+      console.log('[Settings Microservice] Aggregate result count:', result.settings?.length, 'total:', result.total);
+
       res.status(200).json({
         statusCode: 200,
         version: '1.0.0.0',

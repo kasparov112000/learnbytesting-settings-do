@@ -79,6 +79,10 @@ export class SettingService extends DbMicroServiceBase { // eslint-disable-line
     // Stage 1: Match - filter by access control
     const matchStage: any = {};
 
+    console.log('[SettingService.getSettingsAggregate] Starting with options:', {
+      isAdmin, adminOnly, category, type, search, page, pageSize, sortField, sortOrder, environment, currentEnv
+    });
+
     // If not admin, exclude adminOnly settings
     if (!isAdmin) {
       matchStage.adminOnly = { $ne: true };
@@ -103,6 +107,7 @@ export class SettingService extends DbMicroServiceBase { // eslint-disable-line
     // Filter by category
     if (category) {
       matchStage.category = category;
+      console.log('[SettingService.getSettingsAggregate] Filtering by category:', category);
     }
 
     // Filter by type (Site/User)
@@ -111,6 +116,7 @@ export class SettingService extends DbMicroServiceBase { // eslint-disable-line
     }
 
     if (Object.keys(matchStage).length > 0) {
+      console.log('[SettingService.getSettingsAggregate] Match stage:', JSON.stringify(matchStage));
       pipeline.push({ $match: matchStage });
     }
 
