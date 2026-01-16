@@ -92,9 +92,11 @@ RULES:
 AVAILABLE SUBCATEGORIES:
 {{subcategoryList}}
 
-=== WEAKNESS TAG FORMAT (REQUIRED) ===
-Each flashcard MUST include hierarchical weakness tags in the "weaknessTags" array.
+=== WEAKNESS TAG FORMAT (ABSOLUTELY REQUIRED - DO NOT SKIP) ===
+⚠️ CRITICAL: EVERY flashcard MUST include at least ONE weakness tag. Cards without weakness tags will be REJECTED.
+Each flashcard MUST include hierarchical weakness tags in the "weaknessTags" array AND corresponding "weaknessTagData" array.
 Format: "weakness:{type}:{specific}"
+If you cannot identify a specific weakness, use a general category like "weakness:strategy:general-improvement"
 
 Weakness Types (choose one):
 - opening: Opening theory, repertoire, move orders
