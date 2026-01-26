@@ -29,7 +29,8 @@
     "seed:chess-ai-analysis": "ts-node ./scripts/seed-chess-ai-analysis.ts",
     "seed:sidebar-menu-category": "ts-node ./scripts/seed-sidebar-menu-category.ts",
     "seed:chess-flashcard-generation": "ts-node ./scripts/seed-chess-flashcard-generation.ts",
-    "seed:job-settings": "ts-node ./scripts/seed-job-settings.ts"
+    "seed:job-settings": "ts-node ./scripts/seed-job-settings.ts",
+    "seed:notebooklm-position-analysis": "ts-node ./scripts/seed-notebooklm-position-analysis.ts"
   },
   "jest": {
     "coverageReporters": [
