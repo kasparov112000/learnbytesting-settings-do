@@ -1,7 +1,9 @@
+import * as dotenv from 'dotenv';
+dotenv.config(); // Must run before any module that reads process.env
+
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as morgan from 'morgan';
-import * as dotenv from 'dotenv';
 // import { logger } from '@easydevops/pwc-us-agc-logger';
 import * as swaggerUi from 'swagger-ui-express';
 import * as yamljs from 'yamljs';
@@ -22,8 +24,7 @@ const app = express();
 const dbService = new DbService(logger);
 let service;
 
-// Get environment vars
-dotenv.config();
+// Environment vars loaded at top of file
 
 // TODO: Configure appdynamics for each microservice built
 // if (appDynamicsConfigs.enableAppdynamics) {
