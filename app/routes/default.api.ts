@@ -22,7 +22,7 @@ export default function (app, express, serviceobject) {
       if (!doc) {
         return res.status(404).json({ statusCode: 404, message: 'Not found', result: null });
       }
-      res.status(200).json({ statusCode: 200, message: 'Request successful', result: { version: doc.version } });
+      res.status(200).json({ statusCode: 200, message: 'Request successful', result: { version: (doc as any).version } });
     } catch (error) {
       console.error('[Settings] i18n version check error:', error);
       res.status(500).json({ statusCode: 500, message: error.message, result: null });

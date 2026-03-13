@@ -14,5 +14,5 @@ const TranslationSchema = new mongoose.Schema(
 
 TranslationSchema.index({ app: 1, lang: 1 }, { unique: true });
 
-const model = mongoose.model('Translation', TranslationSchema);
-export { model };
+const TranslationModel = mongoose.model('Translation', TranslationSchema);
+export { TranslationModel };

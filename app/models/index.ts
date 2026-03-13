@@ -1,3 +1,3 @@
 export * from './setting';
-export * from './translation';
+export { TranslationModel } from './translation';
 export * from './db-service';
