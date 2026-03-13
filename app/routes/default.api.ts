@@ -1,5 +1,84 @@
+import * as mongoose from 'mongoose';
+import '../models/translation';
+
 export default function (app, express, serviceobject) {
   let router = express.Router();
+
+  const Translation = mongoose.model('Translation');
+
+  // ==========================================
+  // i18n Translation Endpoints
+  // ==========================================
+
+  /**
+   * GET /settings/i18n/version/:app/:lang
+   * Lightweight version check for cache invalidation
+   * MUST be before /settings/i18n/:app/:lang to avoid "version" matching as :app
+   */
+  router.get('/settings/i18n/version/:app/:lang', async (req, res) => {
+    try {
+      const { app: appName, lang } = req.params;
+      const doc = await Translation.findOne({ app: appName, lang }, { version: 1 }).lean();
+      if (!doc) {
+        return res.status(404).json({ statusCode: 404, message: 'Not found', result: null });
+      }
+      res.status(200).json({ statusCode: 200, message: 'Request successful', result: { version: doc.version } });
+    } catch (error) {
+      console.error('[Settings] i18n version check error:', error);
+      res.status(500).json({ statusCode: 500, message: error.message, result: null });
+    }
+  });
+
+  /**
+   * GET /settings/i18n/:app/:lang
+   * Returns translation keys for a given app and language
+   */
+  router.get('/settings/i18n/:app/:lang', async (req, res) => {
+    try {
+      const { app: appName, lang } = req.params;
+      const doc = await Translation.findOne({ app: appName, lang }).lean();
+      if (!doc) {
+        return res.status(404).json({
+          statusCode: 404,
+          message: `No translations found for ${appName}/${lang}`,
+          result: null
+        });
+      }
+      res.status(200).json({ statusCode: 200, message: 'Request successful', result: doc });
+    } catch (error) {
+      console.error('[Settings] i18n GET error:', error);
+      res.status(500).json({ statusCode: 500, message: error.message, result: null });
+    }
+  });
+
+  /**
+   * PUT /settings/i18n/:app/:lang
+   * Upsert translation keys for seeding and admin edits
+   * Body: { keys: {...}, version?: number }
+   */
+  router.put('/settings/i18n/:app/:lang', async (req, res) => {
+    try {
+      const { app: appName, lang } = req.params;
+      const { keys, version } = req.body;
+
+      if (!keys || typeof keys !== 'object') {
+        return res.status(400).json({ statusCode: 400, message: 'keys must be an object', result: null });
+      }
+
+      const doc = await Translation.findOneAndUpdate(
+        { app: appName, lang },
+        version !== undefined
+          ? { $set: { keys, version }, $setOnInsert: { app: appName, lang } }
+          : { $set: { keys }, $inc: { version: 1 }, $setOnInsert: { app: appName, lang } },
+        { upsert: true, new: true, lean: true }
+      );
+
+      res.status(200).json({ statusCode: 200, message: 'Translation upserted', result: doc });
+    } catch (error) {
+      console.error('[Settings] i18n PUT error:', error);
+      res.status(500).json({ statusCode: 500, message: error.message, result: null });
+    }
+  });
 
   // ==========================================
   // Aggregate Pipeline Endpoints (new)
